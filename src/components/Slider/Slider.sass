@@ -1,0 +1,94 @@
+.slider
+  width: 100%
+  height: 100%
+  overflow: hidden
+  position: relative
+
+  &__wrapper
+    display: flex
+    width: 100%
+    height: 100%
+    touch-action: pan-y
+    &_vertical
+      flex-direction: column
+      touch-action: pan-x
+
+  &__slide
+    flex-shrink: 0
+    width: 100%
+    height: 100%
+    font-size: 50px
+    text-align: center
+    padding-top: 400px
+    box-sizing: border-box
+    // visibility: hidden
+    &.is-active
+      visibility: visible
+    &.is-visible
+      visibility: visible
+
+  &__arrow
+    height: 50px
+    width: 35px
+    position: absolute
+    background-size: 50px
+    background-repeat: no-repeat
+    background-position: center center
+    background-color: transparent
+    border: none
+    cursor: pointer
+    &[disabled]
+      cursor: not-allowed
+      opacity: .3
+    &_forward
+      right: 10px
+      bottom: 50%
+      transform: translateY(50%)
+      background-image:  url('../../images/arrow.svg')
+      &.is-vertical
+        right: 10px
+        bottom: 46%
+        transform: translateY(50%) rotate(90deg)
+    &_back
+      left: 10px
+      bottom: 50%
+      transform: translateY(50%) rotate(180deg)
+      background-image:  url('../../images/arrow.svg')
+      &.is-vertical
+        left: auto
+        right: 10px
+        bottom: 54%
+        transform: translateY(50%) rotate(270deg)
+
+  &__pagination
+    position: absolute
+    display: flex
+    gap: 10px
+    z-index: 10
+    &.is-horizontal
+      bottom: 10px
+      left: 50%
+      transform: translateX(-50%)
+    &.is-vertical
+      flex-direction: column
+      left: 10px
+      bottom: 50%
+      transform: translateY(50%)
+
+  &__bullet
+    border-radius: 50%
+    background-color: #ccc
+    padding: 0
+    width: 10px
+    height: 10px
+    border: none
+    cursor: pointer
+    box-sizing: border-box
+    &.is-active
+      background-color: black
+
+  &__counter
+    position: absolute
+    bottom: 10px
+    right: 10px
+    font-size: 30px
