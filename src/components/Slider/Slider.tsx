@@ -20,15 +20,16 @@ interface UserConfig {
 }
 
 function Slider(userConfig: UserConfig): JSX.Element {
-  const [sliderPosition, setSliderPosition] = useState(0);
   const [slideWidth, setSlideWidth] = useState(0);
   const [slideHeight, setSlideHeight] = useState(0);
   const [slidesLength, setSlidesLength] = useState(0);
 
-  // eslint-disable-next-line react/destructuring-assignment
-  const [activeSlide, setActiveSlide] = useState(userConfig.activeSlide ?? 0);
+  const config = useRef(null);
 
-  const config = (function createConfig() {
+  if (!config.current) config.current = createConfig();
+
+  function createConfig() {
+    console.log('luck');
     interface DevConfig {
       transition: number;
       direction: string;
@@ -39,34 +40,31 @@ function Slider(userConfig: UserConfig): JSX.Element {
       transition: userConfig.transition ?? 200,
       direction: userConfig.direction ?? 'horizontal',
     };
-    console.log(userConfig);
-    return Object.assign(devConfig, userConfig);
-  })();
 
-  function changeSliderPosition(index: number) {
-    if (config.direction === 'horizontal') {
-      setSliderPosition(index * slideWidth);
-    } else setSliderPosition(index * slideHeight);
-    setActiveSlide(index);
+    return Object.assign(devConfig, userConfig);
   }
+  // eslint-disable-next-line react/destructuring-assignment
+  const [activeSlide, setActiveSlide] = useState(userConfig.activeSlide ?? 0);
 
   useEffect(() => {
     const slider = document.querySelector<HTMLElement>('.slider');
-    const { direction } = config;
+    const { direction } = config.current;
 
     if (direction === 'horizontal') {
       setSlideWidth(slider.offsetWidth);
     } else {
       setSlideHeight(slider.offsetHeight);
     }
-    console.log('useEffect1');
   }, []);
 
   return (
     <>
       <SliderWrapper
         setSlidesLength={setSlidesLength}
-        sliderPosition={sliderPosition}
+        slideHeight={slideHeight}
+        slideWidth={slideWidth}
+        direction={config.current.direction}
+        activeSlide={activeSlide}
       >
         <Slide>
           <button type="button">a11y</button>1
@@ -86,10 +84,10 @@ function Slider(userConfig: UserConfig): JSX.Element {
       </SliderWrapper>
 
       {/* arrows */}
-      {config.navigation.arrows && (
+      {config.current.navigation.arrows && (
         <Suspense fallback={<p>Arrows loading...</p>}>
           <Arrows
-            changeSliderPosition={(i) => changeSliderPosition(i)}
+            setActiveSlide={(i) => setActiveSlide(i)}
             activeSlide={activeSlide}
             slidesLength={slidesLength}
           />
@@ -97,20 +95,21 @@ function Slider(userConfig: UserConfig): JSX.Element {
       )}
 
       {/* pagination */}
-      {console.log(config.navigation.pagination)}
-      {config.navigation.pagination && (
+      {config.current.navigation.pagination && (
       <Suspense fallback={<p>Pagination loading...</p>}>
         <Pagination
           slidesLength={slidesLength}
-          direction={config.direction}
+          direction={config.current.direction}
+          setActiveSlide={setActiveSlide}
+          activeSlide={activeSlide}
         />
       </Suspense>
       )}
 
       {/* counter */}
-      {config.counter && (
+      {config.current.counter && (
       <Suspense fallback={<p>Counter loading...</p>}>
-        <Counter />
+        <Counter activeSlide={activeSlide} />
       </Suspense>
       )}
     </>
@@ -135,13 +134,23 @@ function Slide(props: SlideProps) {
 type Wrapper = {
   children: React.ReactElement[];
   setSlidesLength: Dispatch<SetStateAction<number>>;
-  sliderPosition: number;
+  slideHeight: number;
+  slideWidth: number;
+  direction: string;
+  activeSlide: number;
 };
 
 function SliderWrapper(props: Wrapper) {
-  const { children, setSlidesLength, sliderPosition } = props;
+  const {
+    children, setSlidesLength, slideHeight, slideWidth, direction, activeSlide,
+  } = props;
 
-  function transformSlider() {
+  function setSliderPosition() {
+    let sliderPosition = 0;
+    if (direction === 'horizontal') {
+      sliderPosition = activeSlide * slideWidth;
+    } else sliderPosition = activeSlide * slideHeight;
+
     return { transform: `translate3d(${-sliderPosition}px, 0, 0)` };
   }
 
@@ -152,7 +161,7 @@ function SliderWrapper(props: Wrapper) {
   }, []);
 
   return (
-    <div className="slider__wrapper" style={transformSlider()}>
+    <div className="slider__wrapper" style={setSliderPosition()}>
       {children}
     </div>
   );
