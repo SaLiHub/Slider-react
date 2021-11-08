@@ -14,7 +14,6 @@ interface UserConfig {
     pagination?: boolean;
   };
   counter?: boolean;
-  pagination?: boolean;
   transition?: number;
   direction?: string;
   activeSlide?: number;
@@ -40,7 +39,7 @@ function Slider(userConfig: UserConfig): JSX.Element {
       transition: userConfig.transition ?? 200,
       direction: userConfig.direction ?? 'horizontal',
     };
-
+    console.log(userConfig);
     return Object.assign(devConfig, userConfig);
   })();
 
@@ -98,6 +97,7 @@ function Slider(userConfig: UserConfig): JSX.Element {
       )}
 
       {/* pagination */}
+      {console.log(config.navigation.pagination)}
       {config.navigation.pagination && (
       <Suspense fallback={<p>Pagination loading...</p>}>
         <Pagination
