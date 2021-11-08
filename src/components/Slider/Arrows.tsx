@@ -8,13 +8,14 @@ function Arrows(props: Props): JSX.Element {
   function handleArrowClick(e: React.MouseEvent<HTMLElement>) {
     const { activeSlide, changeSliderPosition, slidesLength } = props;
     const target = e.target as HTMLTextAreaElement;
-    console.log(activeSlide, 'slidebutton');
+
     if (target.classList.contains('slider__arrow_back')) {
-      if (activeSlide < 0) return;
+      if (activeSlide <= 0) return;
       const newIndex = activeSlide - 1;
       changeSliderPosition(newIndex);
     } else if (target.classList.contains('slider__arrow_forward')) {
-      if (activeSlide > slidesLength - 1) return;
+      console.log(activeSlide);
+      if (activeSlide >= slidesLength - 1) return;
       const newIndex = activeSlide + 1;
       changeSliderPosition(newIndex);
     }
