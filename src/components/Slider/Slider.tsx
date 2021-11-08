@@ -1,6 +1,12 @@
-/* eslint-disable react/self-closing-comp */
-import { useEffect, useState } from 'react';
+// eslint-disable-next-line no-use-before-define
+import React, {
+  useEffect, useState, useRef, Dispatch, SetStateAction, Suspense,
+} from 'react';
 import './Slider.sass';
+
+const Arrows = React.lazy(() => import('./Arrows'));
+const Pagination = React.lazy(() => import('./Pagination'));
+const Counter = React.lazy(() => import('./Counter'));
 
 interface UserConfig {
   navigation?: {
@@ -19,11 +25,18 @@ function Slider(userConfig: UserConfig): JSX.Element {
   const [slideWidth, setSlideWidth] = useState(0);
   const [slideHeight, setSlideHeight] = useState(0);
   const [slidesLength, setSlidesLength] = useState(0);
+
   // eslint-disable-next-line react/destructuring-assignment
   const [activeSlide, setActiveSlide] = useState(userConfig.activeSlide ?? 0);
 
   const config = (function createConfig() {
-    const devConfig = {
+    interface DevConfig {
+      transition: number;
+      direction: string;
+      slides?: number;
+    }
+
+    const devConfig: DevConfig = {
       transition: userConfig.transition ?? 200,
       direction: userConfig.direction ?? 'horizontal',
     };
@@ -31,137 +44,32 @@ function Slider(userConfig: UserConfig): JSX.Element {
     return Object.assign(devConfig, userConfig);
   })();
 
-  function handleArrowClick(e: React.MouseEvent<HTMLElement>) {
-    const target = e.target as HTMLTextAreaElement;
-    console.log(activeSlide, 'slidebutton');
-    if (target.classList.contains('slider__arrow_back')) {
-      if (activeSlide < 0) return;
-      const newIndex = activeSlide - 1;
-      changeSliderPosition(newIndex);
-    } else if (target.classList.contains('slider__arrow_forward')) {
-      if (activeSlide > slidesLength - 1) return;
-      const newIndex = activeSlide + 1;
-      changeSliderPosition(newIndex);
-    }
-
-    // function triggerArrows(newIndex: number) {
-    //   changeSliderPosition(newIndex);
-    //   applyChangesAfterTransition(newIndex);
-    // }
-  }
-
   function changeSliderPosition(index: number) {
-    if (config.direction === 'horizontal') setSliderPosition(index * slideWidth);
-    else setSliderPosition(index * slideHeight);
+    if (config.direction === 'horizontal') {
+      setSliderPosition(index * slideWidth);
+    } else setSliderPosition(index * slideHeight);
     setActiveSlide(index);
   }
 
   useEffect(() => {
     const slider = document.querySelector<HTMLElement>('.slider');
-    if (config.direction === 'horizontal') {
+    const { direction } = config;
+
+    if (direction === 'horizontal') {
       setSlideWidth(slider.offsetWidth);
     } else {
       setSlideHeight(slider.offsetHeight);
     }
-  }, [config.direction]);
-
-  function Arrows() {
-    if (config.navigation.arrows) {
-      return (
-        <>
-          <button
-            type="button"
-            aria-label="forward"
-            className="slider__arrow slider__arrow_forward"
-            onClick={handleArrowClick}
-          />
-          <button
-            type="button"
-            aria-label="back"
-            className="slider__arrow slider__arrow_back"
-            onClick={handleArrowClick}
-          />
-        </>
-      );
-    }
-
-    return null;
-  }
-
-  function Counter() {
-    if (config.counter) {
-      return <span className="slider__counter">12</span>;
-    }
-
-    return null;
-  }
-
-  function Pagination() {
-    if (config.pagination) {
-      const paginationState = config.direction === 'vertical' ? 'is-vertical' : 'is-horizontal';
-      const bullets = [];
-      for (let i = 0; i < slidesLength; i++) {
-        bullets.push(
-          <button
-            type="button"
-            className="slider__bullet"
-            aria-label={`select ${i} slide`}
-            data-index={i}
-            key={i}
-          >
-          </button>,
-        );
-      }
-
-      return (
-        <div className={`slider__pagination ${paginationState}`}>
-          {bullets}
-        </div>
-      );
-    }
-
-    return null;
-  }
-
-  type SlideProps = {
-    id?: number;
-    children?: React.ReactNode;
-  };
-
-  function Slide(props: SlideProps) {
-    const { id, children } = props;
-
-    return (
-      <div className="slider__slide" data-id={id}>
-        {children}
-      </div>
-    );
-  }
-
-  type Wrapper = {
-    children?: React.ReactElement[];
-  };
-
-  function SliderWrapper(props: Wrapper) {
-    const { children } = props;
-    useEffect(() => {
-      setSlidesLength(children.length);
-    }, [children.length]);
-
-    return <div className="slider__wrapper" style={transformSlider()}>{children}</div>;
-  }
-
-  function transformSlider() {
-    console.log(sliderPosition, 'pos');
-    return { transform: `translate3d(${-sliderPosition}px, 0, 0)` };
-  }
-
-  console.log('render');
+    console.log('useEffect1');
+  }, []);
 
   return (
     <>
-      <SliderWrapper>
-        <Slide id={0}>
+      <SliderWrapper
+        setSlidesLength={setSlidesLength}
+        sliderPosition={sliderPosition}
+      >
+        <Slide>
           <button type="button">a11y</button>1
         </Slide>
         <Slide>
@@ -179,14 +87,74 @@ function Slider(userConfig: UserConfig): JSX.Element {
       </SliderWrapper>
 
       {/* arrows */}
-      <Arrows />
+      {config.navigation.arrows && (
+        <Suspense fallback={<p>Arrows loading...</p>}>
+          <Arrows
+            changeSliderPosition={(i) => changeSliderPosition(i)}
+            activeSlide={activeSlide}
+            slidesLength={slidesLength}
+          />
+        </Suspense>
+      )}
 
       {/* pagination */}
-      <Pagination />
+      {config.navigation.pagination && (
+      <Suspense fallback={<p>Pagination loading...</p>}>
+        <Pagination
+          slidesLength={slidesLength}
+          direction={config.direction}
+        />
+      </Suspense>
+      )}
 
       {/* counter */}
-      <Counter />
+      {config.counter && (
+      <Suspense fallback={<p>Counter loading...</p>}>
+        <Counter />
+      </Suspense>
+      )}
     </>
+  );
+}
+
+type SlideProps = {
+  children: React.ReactNode;
+};
+
+function Slide(props: SlideProps) {
+  const { children } = props;
+
+  return (
+    <div className="slider__slide">
+      {children}
+    </div>
+  );
+}
+
+// Wrapper component.
+type Wrapper = {
+  children: React.ReactElement[];
+  setSlidesLength: Dispatch<SetStateAction<number>>;
+  sliderPosition: number;
+};
+
+function SliderWrapper(props: Wrapper) {
+  const { children, setSlidesLength, sliderPosition } = props;
+
+  function transformSlider() {
+    return { transform: `translate3d(${-sliderPosition}px, 0, 0)` };
+  }
+
+  useEffect(() => {
+    // Save quantity of slides so then to use it in next render
+    // for building pagination and do so only on first render.
+    setSlidesLength(children.length);
+  }, []);
+
+  return (
+    <div className="slider__wrapper" style={transformSlider()}>
+      {children}
+    </div>
   );
 }
 
