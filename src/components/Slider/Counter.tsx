@@ -1,12 +1,10 @@
-// interface Props {
-//   config: {
-//     counter: boolean;
-//   }
-// }
+interface Props {
+  activeSlide: number;
+}
 
-function Counter():JSX.Element {
-  // const { counter } = config;
-  return <span className="slider__counter">12</span>;
+function Counter(props: Props):JSX.Element {
+  const { activeSlide } = props;
+  return <span className="slider__counter">{activeSlide + 1}</span>;
 }
 
 export default Counter;
